@@ -25,6 +25,10 @@ namespace BlazorApp_ml.NET
             var imagesFolder = Path.Combine(assetsPath, "inputs", "images");
             var inceptionPb = Path.Combine(assetsPath, "inputs", "inception", "tensorflow_inception_graph.pb");
             var labelsTxt = Path.Combine(assetsPath, "inputs", "inception", "imagenet_comp_graph_label_strings.txt");
+            var img_name = "coffeepot2.jpg";
+            var pred = new pred_model(tagsTsv, imagesFolder, inceptionPb, labelsTxt,img_name);
+            pred.Predict();
+            /*Write_to_file(tagsTsv, img_name);
             try
             {
                 var modelScorer = new TFModelScorer(tagsTsv, imagesFolder, inceptionPb, labelsTxt);
@@ -34,7 +38,7 @@ namespace BlazorApp_ml.NET
             catch (Exception ex)
             {
                 ConsoleHelpers.ConsoleWriteException(ex.ToString());
-            }
+            }*/
 	    //ConsoleHelpers.ConsolePressAnyKey();
 	    CreateHostBuilder(args).Build().Run();
             
@@ -54,5 +58,6 @@ namespace BlazorApp_ml.NET
             string fullPath = Path.Combine(assemblyFolderPath, relativePath);
             return fullPath;
         }
+
     }
 }

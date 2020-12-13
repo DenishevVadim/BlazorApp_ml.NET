@@ -49,7 +49,7 @@ namespace ImageClassification.ModelScorer
         public void Score()
         {
             var model = LoadModel(dataLocation, imagesFolder, modelLocation);
-
+    
             var predictions = PredictDataUsingModel(dataLocation, imagesFolder, labelsLocation, model).ToArray();
 
         }
@@ -97,7 +97,6 @@ namespace ImageClassification.ModelScorer
                 var imageData = new ImageNetDataProbability()
                 {
                     ImagePath = sample.ImagePath,
-                    Label = sample.Label
                 };
                 (imageData.PredictedLabel, imageData.Probability) = GetBestLabel(labels, probs);
                 imageData.ConsoleWrite();

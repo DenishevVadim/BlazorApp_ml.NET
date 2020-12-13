@@ -61,19 +61,7 @@ namespace ImageClassification.ModelScorer
             Console.ForegroundColor = defaultForeground;
             Console.Write(" labeled as ");
             Console.ForegroundColor = labelColor;
-            Console.Write(self.Label);
-            Console.ForegroundColor = defaultForeground;
-            Console.Write(" predicted as ");
-            if (self.Label.Equals(self.PredictedLabel))
-            {
-                Console.ForegroundColor = exactLabel;
-                Console.Write($"{self.PredictedLabel}");
-            }
-            else
-            {
-                Console.ForegroundColor = failLabel;
-                Console.Write($"{self.PredictedLabel}");
-            }
+            Console.Write($"{self.PredictedLabel}");
             Console.ForegroundColor = defaultForeground;
             Console.Write(" with probability ");
             Console.ForegroundColor = probColor;
