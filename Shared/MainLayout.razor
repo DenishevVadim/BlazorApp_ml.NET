@@ -1,8 +1,9 @@
 ﻿@inherits LayoutComponentBase
+@inject IBootstrapCss BootstrapCSS
 
 <div class="sidebar">
     <NavMenu />
-</div>
+</div>  
 
 <div class="main">
     <div class="top-row px-4">
@@ -13,3 +14,20 @@
         @Body
     </div>
 </div>
+
+@code{
+    private bool isServerSide=false;
+    protected override async Task OnInitializedAsync(){
+        try {
+            await BootstrapCSS.SetBootstrapCss("4.3.1");
+        }
+        catch (Exception) {
+            isServerSide = true;
+        }
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRun){
+        if (isServerSide && firstRun) {
+            await BootstrapCSS.SetBootstrapCss("4.3.1");
+        }
+    }
+}
