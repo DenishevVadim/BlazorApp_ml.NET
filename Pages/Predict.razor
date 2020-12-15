@@ -1,5 +1,4 @@
 @page "/predict"
-@using System.IO
 
 <h1>Single file</h1>
 
@@ -17,10 +16,12 @@
         var file = files.FirstOrDefault();
         if (file != null)
         {
-            // Just load into .NET memory to show it can be done
-            // Alternatively it could be saved to disk, or parsed in memory, or similar
             var ms = new MemoryStream();
             await file.Data.CopyToAsync(ms);
+            var img =  ms.ToArray();
+            
+            Bitmap bmp = new Bitmap(ms);
+            bmp.Save("./Model/assets/inputs/images/img.jpg", System.Drawing.Imaging.ImageFormat.Jpeg);
 
             status = $"Finished loading {file.Size} bytes from {file.Name}";
         }
