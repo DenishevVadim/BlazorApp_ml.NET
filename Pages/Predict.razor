@@ -4,12 +4,21 @@
 
 <p>A single file input that uploads automatically on file selection</p>
 
-<InputFile OnChange="HandleSelection" />
+<InputFile  OnChange="HandleSelection" />
 
 <p>@status</p>
 
+@{
+    if (fileUploaded) {
+        <img src="/Image/img.jpg" alt=@src width="300px" />
+    }
+}
+
+
 @code {
     string status;
+    bool fileUploaded = false;
+    string src = "./Model/assets/inputs/images/img.jpg";
 
     async Task HandleSelection(IFileListEntry[] files)
     {
@@ -21,9 +30,10 @@
             var img =  ms.ToArray();
             
             Bitmap bmp = new Bitmap(ms);
-            bmp.Save("./Model/assets/inputs/images/img.jpg", System.Drawing.Imaging.ImageFormat.Jpeg);
+            bmp.Save(src, System.Drawing.Imaging.ImageFormat.Jpeg);
 
-            status = $"Finished loading {file.Size} bytes from {file.Name}";
+            status = $"Файл {file.Name} загружен";
+            fileUploaded = true;
         }
     }
 }
