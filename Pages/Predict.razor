@@ -16,7 +16,7 @@
     if (fileUploaded) {
         <img src=@src alt=@fileName />
 
-        @* string assetsRelativePath = @"..\..\..\Model\assets";
+        string assetsRelativePath = @"..\..\..\Model\assets";
         string assetsPath = GetAbsolutePath(assetsRelativePath);
 
         var tagsTsv = Path.Combine(assetsPath, "inputs", "images", "tags.tsv");
@@ -33,7 +33,7 @@
 
         <p>
             Изображение @img_name совпадает с классом @label c вероятностью @probability
-        </p> *@
+        </p>
     }
 }
 
