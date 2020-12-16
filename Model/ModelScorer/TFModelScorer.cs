@@ -46,11 +46,13 @@ namespace ImageClassification.ModelScorer
             public const string outputTensorName = "softmax2";
         }
 
-        public void Score()
+        public IEnumerable<ImageNetDataProbability> Score()
         {
             var model = LoadModel(dataLocation, imagesFolder, modelLocation);
     
-            var predictions = PredictDataUsingModel(dataLocation, imagesFolder, labelsLocation, model).ToArray();
+            var predictions = PredictDataUsingModel(dataLocation, imagesFolder, labelsLocation, model);
+
+            return predictions;
 
         }
 
@@ -77,7 +79,7 @@ namespace ImageClassification.ModelScorer
             return predictionEngine;
         }
 
-        protected IEnumerable<ImageNetData> PredictDataUsingModel(string testLocation, 
+        protected IEnumerable<ImageNetDataProbability> PredictDataUsingModel(string testLocation, 
                                                                   string imagesFolder, 
                                                                   string labelsLocation, 
                                                                   PredictionEngine<ImageNetData, ImageNetPrediction> model)

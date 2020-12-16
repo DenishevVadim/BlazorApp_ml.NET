@@ -28,18 +28,19 @@ namespace ImageClassification.ModelScorer
             this.img_name = img_name;
             mlContext = new MLContext();
         }
-        public void Predict()
+        public ImageNetDataProbability Predict()
         {
             Write_to_file(dataLocation, img_name);
             try
             {
                 var modelScorer = new TFModelScorer(dataLocation, imagesFolder, modelLocation, labelsLocation);
-                modelScorer.Score();
-
+                var res = modelScorer.Score().Single();
+                return res;
             }
             catch (Exception ex)
             {
                 ConsoleHelpers.ConsoleWriteException(ex.ToString());
+                return null;
             }
         }
         static void Write_to_file(string tagsTsv, string img_name)
