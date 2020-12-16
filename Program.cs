@@ -18,16 +18,6 @@ namespace BlazorApp_ml.NET
     {
         public static void Main(string[] args)
         {
-            string assetsRelativePath = @"../../../Model/assets";
-            string assetsPath = GetAbsolutePath(assetsRelativePath);
-
-            var tagsTsv = Path.Combine(assetsPath, "inputs", "images", "tags.tsv");
-            var imagesFolder = Path.Combine(assetsPath, "inputs", "images");
-            var inceptionPb = Path.Combine(assetsPath, "inputs", "inception", "tensorflow_inception_graph.pb");
-            var labelsTxt = Path.Combine(assetsPath, "inputs", "inception", "imagenet_comp_graph_label_strings.txt");
-            var img_name = "coffeepot2.jpg"; //path to image
-            var pred = new pred_model(tagsTsv, imagesFolder, inceptionPb, labelsTxt,img_name); // create model
-            pred.Predict(); // pred
 	        CreateHostBuilder(args).Build().Run(); 
         }
 
@@ -38,13 +28,5 @@ namespace BlazorApp_ml.NET
                 {
                     webBuilder.UseStartup<Startup>();
                 });
-        public static string GetAbsolutePath(string relativePath)
-        {
-            FileInfo _dataRoot = new FileInfo(typeof(Program).Assembly.Location);
-            string assemblyFolderPath = _dataRoot.Directory.FullName;
-            string fullPath = Path.Combine(assemblyFolderPath, relativePath);
-            return fullPath;
-        }
-
     }
 }

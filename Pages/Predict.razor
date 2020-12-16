@@ -1,7 +1,9 @@
 @page "/predict"
+@using ImageClassification.ModelScorer;
+@using ImageClassification.ImageDataStructures;
+
 
 <h1>Single file</h1>
-
 <p>A single file input that uploads automatically on file selection</p>
 
 <InputFile  OnChange="HandleSelection" />
@@ -9,8 +11,29 @@
 <p>@status</p>
 
 @{
+    string src = "/Image/img.jpg";
+
     if (fileUploaded) {
-        <img src="/Image/img.jpg" alt=@src width="300px" />
+        <img src=@src alt=@fileName />
+
+        @* string assetsRelativePath = @"..\..\..\Model\assets";
+        string assetsPath = GetAbsolutePath(assetsRelativePath);
+
+        var tagsTsv = Path.Combine(assetsPath, "inputs", "images", "tags.tsv");
+        var imagesFolder = Path.Combine(assetsPath, "inputs", "images");
+        var inceptionPb = Path.Combine(assetsPath, "inputs", "inception", "tensorflow_inception_graph.pb");
+        var labelsTxt = Path.Combine(assetsPath, "inputs", "inception", "imagenet_comp_graph_label_strings.txt");
+        var img_name = "img.jpg"; //path to image
+
+        var pred = new pred_model(tagsTsv, imagesFolder, inceptionPb, labelsTxt,img_name); // create model
+        var res = pred.Predict(); // pred
+
+        var label = res.PredictedLabel;
+        var probability = res.Probability;
+
+        <p>
+            Изображение @img_name совпадает с классом @label c вероятностью @probability
+        </p> *@
     }
 }
 
@@ -18,7 +41,9 @@
 @code {
     string status;
     bool fileUploaded = false;
-    string src = "./Model/assets/inputs/images/img.jpg";
+    string fileName;
+    string src1 = "./Model/assets/inputs/images/img.jpg";
+    string src2 = "./wwwroot/Image/img.jpg";
 
     async Task HandleSelection(IFileListEntry[] files)
     {
@@ -30,10 +55,20 @@
             var img =  ms.ToArray();
             
             Bitmap bmp = new Bitmap(ms);
-            bmp.Save(src, System.Drawing.Imaging.ImageFormat.Jpeg);
+            bmp.Save(src1, System.Drawing.Imaging.ImageFormat.Jpeg);
+            bmp.Save(src2, System.Drawing.Imaging.ImageFormat.Jpeg);
 
             status = $"Файл {file.Name} загружен";
             fileUploaded = true;
+            fileName = file.Name;
         }
     }
+
+        string GetAbsolutePath(string relativePath)
+        {
+            FileInfo _dataRoot = new FileInfo(typeof(Program).Assembly.Location);
+            string assemblyFolderPath = _dataRoot.Directory.FullName;
+            string fullPath = Path.Combine(assemblyFolderPath, relativePath);
+            return fullPath;
+        }
 }
