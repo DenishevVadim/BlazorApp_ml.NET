@@ -13,7 +13,7 @@
 <p>@status</p>
 
 @{
-    string src = @"\Image\img.jpg";
+    string src = "/Image/img.jpg";
 
     if (fileUploaded) {
         logger.LogWarning("input single file");
@@ -45,8 +45,8 @@
     string status;
     bool fileUploaded = false;
     string fileName;
-    string src1 = @".\Model\assets\inputs\images\img.jpg";
-    string src2 = @".\wwwroot\Image\img.jpg";
+    string src1 = "./Model/assets/inputs/images/img.jpg";
+    string src2 = "./wwwroot/Image/img.jpg";
 
     async Task HandleSelection(IFileListEntry[] files)
     {
@@ -59,7 +59,7 @@
             
             Bitmap bmp = new Bitmap(ms);
             bmp.Save(src1, System.Drawing.Imaging.ImageFormat.Jpeg);
-            bmp.Save(src2, System.Drawing.Imaging.ImageFormat.Jpeg);
+            //bmp.Save(src2, System.Drawing.Imaging.ImageFormat.Jpeg);
 
             status = $"Файл {file.Name} загружен";
             fileUploaded = true;
