@@ -1,9 +1,11 @@
 @page "/predict"
 @using ImageClassification.ModelScorer;
 @using ImageClassification.ImageDataStructures;
+@using Microsoft.Extensions.Logging;
+@inject ILogger<Predict> logger;
 
 
-<h1>Single file</h1>
+<h1>Predict</h1>
 <p>A single file input that uploads automatically on file selection</p>
 
 <InputFile  OnChange="HandleSelection" />
@@ -14,6 +16,7 @@
     string src = "/Image/img.jpg";
 
     if (fileUploaded) {
+        logger.LogWarning("input single file");
         <img src=@src alt=@fileName />
 
         string assetsRelativePath = @"..\..\..\Model\assets";
@@ -30,7 +33,7 @@
 
         var label = res.PredictedLabel;
         var probability = res.Probability;
-
+        logger.LogWarning($"name = {@img_name}, label = {@label}, probability = {@probability}");
         <p>
             Изображение @img_name совпадает с классом @label c вероятностью @probability
         </p>
