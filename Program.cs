@@ -10,8 +10,8 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.ML;
 using ImageClassification.ModelScorer;
-using ImageClassification.ModelScorer;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+using Microsoft.Extensions.Logging;
 
 
 namespace BlazorApp_ml.NET
@@ -20,18 +20,21 @@ namespace BlazorApp_ml.NET
     {
         public static void Main(string[] args)
         {
-            var builder = WebAssemblyHostBuilder.CreateDefault(args);
-            builder.Logging.SetMinimumLevel(LogLevel.Debug);
-            builder.Logging.AddProvider(new CustomLoggingProvider());
 	        CreateHostBuilder(args).Build().Run(); 
         }
 
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>
-            Host.CreateDefaultBuilder(args)
-                .ConfigureWebHostDefaults(webBuilder =>
-                {
-                    webBuilder.UseStartup<Startup>();
-                });
+        Host.CreateDefaultBuilder(args)
+            .ConfigureLogging((hostingContext, logging) =>
+            {
+                logging.ClearProviders();
+                logging.AddConsole(options => options.IncludeScopes = true);
+                logging.AddDebug();
+            })
+            .ConfigureWebHostDefaults(webBuilder =>
+            {
+                webBuilder.UseStartup<Startup>();
+            });
     }
 }
