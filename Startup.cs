@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.IO;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Components;
@@ -8,6 +9,9 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Tewr.Blazor.FileReader;
+using Microsoft.Extensions.FileProviders;
+
 
 namespace BlazorApp_ml.NET
 {
@@ -26,6 +30,7 @@ namespace BlazorApp_ml.NET
         {
             services.AddRazorPages();
             services.AddServerSideBlazor();
+            services.AddFileReaderService();    
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
