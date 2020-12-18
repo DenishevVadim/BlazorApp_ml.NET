@@ -1,23 +1,33 @@
-@page "/predict"
+@page "/"
+@using System.Diagnostics;
+@inject IFileReaderService fileReaderService;
+@inject IJSRuntime CurrentJSRuntime;
 @using ImageClassification.ModelScorer;
 @using ImageClassification.ImageDataStructures;
 @using Microsoft.Extensions.Logging;
 @inject ILogger<Predict> logger;
+<h1>Hello, files!</h1>
 
+Welcome to your new filestreaming app.
+<br />
+This demo reads a file without doing anything particular with it.
+<br />
+There are other demos in the menu.
+<br />
+<br />
 
-<h1>Predict</h1>
-<p>A single file input that uploads automatically on file selection</p>
-
-<InputFile  OnChange="HandleSelection" />
-
-<p>@status</p>
-
+<input type="file" @ref=inputElement />
+<button @onclick=ReadFile class="btn btn-primary">Read file</button>
+<button @onclick=ClearFile class="btn btn-primary">Clear</button>
+<button @onclick=CancelFile disabled=@IsCancelDisabled class="btn btn-primary">Cancel</button>
+<br />
+<br />
+<progress max="@max" value="@value" />
+<br />
 @{
-    string src = "/Image/img.jpg";
-
-    if (fileUploaded) {
+    if (fileUploaded){
         logger.LogWarning("input single file");
-        <img src=@src alt=@fileName />
+        <img src="@imgPath" width="300px" alt="@fileName" />
 
         string assetsRelativePath = @"..\..\..\Model\assets";
         string assetsPath = GetAbsolutePath(assetsRelativePath);
@@ -35,39 +45,134 @@
         var probability = res.Probability;
         logger.LogWarning($"name = {@img_name}, label = {@label}, probability = {@probability}");
         <p>
-            Изображение @img_name совпадает с классом @label c вероятностью @probability
+            Изображение @fileName совпадает с классом @label c вероятностью @probability
         </p>
     }
 }
 
 
 @code {
-    string status;
-    bool fileUploaded = false;
-    string fileName;
-    string src1 = "./Model/assets/inputs/images/img.jpg";
-    string src2 = "./wwwroot/Image/img.jpg";
+    private static string nl = Environment.NewLine;
+    [Parameter]
+    public int BufferSize { get; set; } = 20480;
+    public long max;
+    public long value;
+    ElementReference inputElement;
+    public System.Threading.CancellationTokenSource cancellationTokenSource;
+    string Output { get; set; }
 
-    async Task HandleSelection(IFileListEntry[] files)
+    public bool CanCancel { get; set; }
+    public bool IsCancelDisabled => !CanCancel;
+
+    public Array img;
+    private string src1 = "./Model/assets/inputs/images/img.jpg";
+    private string src2 = "./wwwroot/Image/img.jpg";
+    private string imgPath = @"/Image/img.jpg";
+    private bool fileUploaded = false;
+    public string fileName;
+
+    public async Task ClearFile()
     {
-        var file = files.FirstOrDefault();
-        if (file != null)
-        {
-            var ms = new MemoryStream();
-            await file.Data.CopyToAsync(ms);
-            var img =  ms.ToArray();
-            
-            Bitmap bmp = new Bitmap(ms);
-            bmp.Save(src1, System.Drawing.Imaging.ImageFormat.Jpeg);
-            //bmp.Save(src2, System.Drawing.Imaging.ImageFormat.Jpeg);
-
-            status = $"Файл {file.Name} загружен";
-            fileUploaded = true;
-            fileName = file.Name;
-        }
+        await fileReaderService.CreateReference(inputElement).ClearValue();
     }
 
-        string GetAbsolutePath(string relativePath)
+    public async Task ReadFile()
+    {
+        max = 0;
+        value = 0;
+        Output = string.Empty;
+        this.StateHasChanged();
+        var files = await fileReaderService.CreateReference(inputElement).EnumerateFilesAsync();
+        foreach (var file in files)
+        {
+            var fileInfo = await file.ReadFileInfoAsync();
+            max = fileInfo.Size;
+
+            fileName = fileInfo.Name;
+
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
+
+            Output += $"{nameof(IFileInfo)}.{nameof(fileInfo.Name)}: {fileInfo.Name}{nl}";
+            Output += $"{nameof(IFileInfo)}.{nameof(fileInfo.Size)}: {fileInfo.Size}{nl}";
+            Output += $"{nameof(IFileInfo)}.{nameof(fileInfo.Type)}: {fileInfo.Type}{nl}";
+            Output += $"{nameof(IFileInfo)}.{nameof(fileInfo.LastModifiedDate)}: {fileInfo.LastModifiedDate?.ToString() ?? "(N/A)"}{nl}";
+            foreach (var property in fileInfo.NonStandardProperties.Keys)
+            {
+                Output += $"{nameof(IFileInfo)}.{property} (nonstandard): {fileInfo.NonStandardProperties[property]}{nl}";
+            }
+            Output += $"Reading file...";
+            this.StateHasChanged();
+            Console.WriteLine(Output);
+            cancellationTokenSource?.Dispose();
+            cancellationTokenSource = new System.Threading.CancellationTokenSource();
+            CanCancel = true;
+
+            const int onlyReportProgressAfterThisPercentDelta = 10;
+
+            // Subscribe to progress (change of position)
+            fileInfo.PositionInfo.PositionChanged += (s, e) =>
+            {
+                // (optional) Only report progress in console / progress bar if percentage has moved over 10% since last call to Acknowledge()
+                if (e.PercentageDeltaSinceAcknowledge > onlyReportProgressAfterThisPercentDelta)
+                {
+                    stopwatch.Stop();
+                    Output += $"Read {(e.PositionDeltaSinceAcknowledge)} bytes ({e.Percentage:00}%). {e.Position} / {fileInfo.Size}{nl}";
+                    this.InvokeAsync(this.StateHasChanged);
+                    e.Acknowledge();
+                    value = e.Position;
+                    stopwatch.Start();
+                }
+            };
+
+            try
+            {
+                // PositionStream is a stream created only for this demo, 
+                // That does nothing with the data other then updating its position property.
+                var ms = new MemoryStream();
+
+                using (var fs = await file.OpenReadAsync())
+                {
+                    await fs.CopyToAsync(ms, BufferSize, cancellationTokenSource.Token);
+                    stopwatch.Stop();
+                }
+
+                img = ms.ToArray();
+                Bitmap bmp = new Bitmap(ms);
+                bmp.Save(src1, System.Drawing.Imaging.ImageFormat.Jpeg);
+                bmp.Save(src2, System.Drawing.Imaging.ImageFormat.Jpeg);
+
+                fileUploaded = true;
+
+                value = max;
+                Output += $"Done reading file {fileInfo.Name} - {fileInfo.Size} bytes in {stopwatch.ElapsedMilliseconds}ms.{nl}.";
+                this.StateHasChanged();
+            }
+            catch (OperationCanceledException)
+            {
+                Output += $"Operation was cancelled";
+                await InvokeAsync(StateHasChanged);
+                await Task.Delay(1);
+            }
+            finally
+            {
+                CanCancel = false;
+            }
+        }
+
+
+
+    }
+
+    public async Task CancelFile()
+    {
+        Output += $"Cancel requested.{nl}";
+        await InvokeAsync(StateHasChanged);
+        await Task.Delay(1);
+        cancellationTokenSource.Cancel();
+    }
+
+    public string GetAbsolutePath(string relativePath)
         {
             FileInfo _dataRoot = new FileInfo(typeof(Program).Assembly.Location);
             string assemblyFolderPath = _dataRoot.Directory.FullName;
