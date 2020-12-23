@@ -5,7 +5,9 @@
 @using ImageClassification.ModelScorer;
 @using ImageClassification.ImageDataStructures;
 @using Microsoft.Extensions.Logging;
+@using Microsoft.JSInterop;
 @inject ILogger<Predict> logger;
+
 <h1>Inception model</h1>
 
 There are multiple models which are pre-trained for classifying images. 
@@ -62,6 +64,8 @@ In this case, we use a model based on an Inception topology, and trained with im
 
 
 @code {
+    [Inject]
+    public IJSRuntime jsRuntime { get; set; }
     private static string nl = Environment.NewLine;
     [Parameter]
     public int BufferSize { get; set; } = 20480;
@@ -95,10 +99,18 @@ In this case, we use a model based on an Inception topology, and trained with im
         this.StateHasChanged();
         var files = await fileReaderService.CreateReference(inputElement).EnumerateFilesAsync();
         foreach (var file in files)
-        {
-            fileUploading = true;
+        {fileUploading = true;
             fileUploaded = false;
             var fileInfo = await file.ReadFileInfoAsync();
+
+            string[] extencions = {"image/jpeg", "image/jpg","image/png"};
+            if (!extencions.Contains(fileInfo.Type))
+            {   
+                
+                await jsRuntime.InvokeVoidAsync("ShowAlert", "123");
+                break;
+            }
+
             max = fileInfo.Size;
 
             fileName = fileInfo.Name;
