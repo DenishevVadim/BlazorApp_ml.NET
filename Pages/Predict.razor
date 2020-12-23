@@ -18,14 +18,25 @@ In this case, we use a model based on an Inception topology, and trained with im
 <button @onclick=ReadFile class="btn btn-primary">Read file</button>
 <button @onclick=ClearFile class="btn btn-primary">Clear</button>
 <button @onclick=CancelFile disabled=@IsCancelDisabled class="btn btn-primary">Cancel</button>
-<br />
-<br />
-<progress max="@max" value="@value" />
-<br />
 @{
-    if (fileUploaded){
+    if (fileUploading)
+    {
+        <br />
+        <br />
+        <progress max="@max" value="@value" />
+        <br />
+    }
+    else
+    {
+        <br />
+        <br />
+    }
+
+    if (fileUploaded)
+    {
         logger.LogWarning("input single file");
-        <img src="@imgPath" width="300px" alt="@fileName" />
+        <img src="@(imgPath + fileName)" width="300px" alt="@fileName" />
+        fileUploading = false;
 
         string assetsRelativePath = @"..\..\..\Model\assets";
         string assetsPath = GetAbsolutePath(assetsRelativePath);
@@ -46,6 +57,7 @@ In this case, we use a model based on an Inception topology, and trained with im
             Изображение @fileName совпадает с классом @label c вероятностью @probability
         </p>
     }
+
 }
 
 
@@ -64,10 +76,11 @@ In this case, we use a model based on an Inception topology, and trained with im
 
     public Array img;
     private string src1 = "./Model/assets/inputs/images/img.jpg";
-    private string src2 = "./wwwroot/Image/img.jpg";
-    private string imgPath = @"/Image/img.jpg";
+    private string src2 = "./wwwroot/Image/";
+    private string imgPath = @"/Image/";
     private bool fileUploaded = false;
     public string fileName;
+    public bool fileUploading = false;
 
     public async Task ClearFile()
     {
@@ -83,6 +96,8 @@ In this case, we use a model based on an Inception topology, and trained with im
         var files = await fileReaderService.CreateReference(inputElement).EnumerateFilesAsync();
         foreach (var file in files)
         {
+            fileUploading = true;
+            fileUploaded = false;
             var fileInfo = await file.ReadFileInfoAsync();
             max = fileInfo.Size;
 
@@ -138,7 +153,7 @@ In this case, we use a model based on an Inception topology, and trained with im
                 img = ms.ToArray();
                 Bitmap bmp = new Bitmap(ms);
                 bmp.Save(src1, System.Drawing.Imaging.ImageFormat.Jpeg);
-                bmp.Save(src2, System.Drawing.Imaging.ImageFormat.Jpeg);
+                bmp.Save((src2 + fileName), System.Drawing.Imaging.ImageFormat.Jpeg);
 
                 fileUploaded = true;
 
@@ -157,9 +172,6 @@ In this case, we use a model based on an Inception topology, and trained with im
                 CanCancel = false;
             }
         }
-
-
-
     }
 
     public async Task CancelFile()
