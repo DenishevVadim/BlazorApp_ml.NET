@@ -11,7 +11,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.ML;
 using ImageClassification.ModelScorer;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
-using Microsoft.Extensions.Logging;
 
 
 namespace BlazorApp_ml.NET

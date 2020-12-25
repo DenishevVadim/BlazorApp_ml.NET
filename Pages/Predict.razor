@@ -3,9 +3,7 @@
 @inject IFileReaderService fileReaderService;
 @inject IJSRuntime CurrentJSRuntime;
 @using ImageClassification.ModelScorer;
-@using ImageClassification.ImageDataStructures;
 @using Microsoft.Extensions.Logging;
-@using Microsoft.JSInterop;
 @inject ILogger<Predict> logger;
 
 <h1>Inception model</h1>
@@ -54,6 +52,7 @@ In this case, we use a model based on an Inception topology, and trained with im
 
         var label = res.PredictedLabel;
         var probability = res.Probability;
+
         logger.LogWarning($"name = {@img_name}, label = {@label}, probability = {@probability}");
         <p>
             Изображение @fileName совпадает с классом @label c вероятностью @probability
@@ -106,7 +105,7 @@ In this case, we use a model based on an Inception topology, and trained with im
             string[] extencions = {"image/jpeg", "image/jpg","image/png"};
             if (!extencions.Contains(fileInfo.Type))
             {   
-                
+                fileUploading = false;
                 await jsRuntime.InvokeVoidAsync("ShowAlert", "123");
                 break;
             }
@@ -195,10 +194,10 @@ In this case, we use a model based on an Inception topology, and trained with im
     }
 
     public string GetAbsolutePath(string relativePath)
-        {
-            FileInfo _dataRoot = new FileInfo(typeof(Program).Assembly.Location);
-            string assemblyFolderPath = _dataRoot.Directory.FullName;
-            string fullPath = Path.Combine(assemblyFolderPath, relativePath);
-            return fullPath;
-        }
+    {
+        FileInfo _dataRoot = new FileInfo(typeof(Program).Assembly.Location);
+        string assemblyFolderPath = _dataRoot.Directory.FullName;
+        string fullPath = Path.Combine(assemblyFolderPath, relativePath);
+        return fullPath;
+    }
 }

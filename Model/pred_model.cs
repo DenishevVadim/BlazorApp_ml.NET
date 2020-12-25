@@ -58,6 +58,6 @@ namespace ImageClassification.ModelScorer
                 Console.WriteLine(e.Message);
             }
         }
-
     }
 }
+

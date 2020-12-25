@@ -52,8 +52,6 @@ namespace ImageClassification.ModelScorer
             var defaultForeground = Console.ForegroundColor;
             var labelColor = ConsoleColor.Magenta;
             var probColor = ConsoleColor.Blue;
-            var exactLabel = ConsoleColor.Green;
-            var failLabel = ConsoleColor.Red;
 
             Console.Write("ImagePath: ");
             Console.ForegroundColor = labelColor;
