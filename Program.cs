@@ -19,6 +19,27 @@ namespace BlazorApp_ml.NET
     {
         public static void Main(string[] args)
         {
+            using (ApplicationContext db = new ApplicationContext())
+            {
+                // создаем два объекта User
+                User user1 = new User { Name = "Tom" };
+                User user2 = new User { Name = "Alice"};
+ 
+                // добавляем их в бд
+                db.Users.Add(user1);
+                db.Users.Add(user2);
+                db.SaveChanges();
+                Console.WriteLine("Объекты успешно сохранены");
+ 
+                // получаем объекты из бд и выводим на консоль
+                var users = db.Users.ToList();
+                Console.WriteLine("Список объектов:");
+                foreach (User u in users)
+                {
+                    Console.WriteLine($"{u.Id}.{u.Name}");
+                }
+            }
+            Console.Read();
 	        CreateHostBuilder(args).Build().Run(); 
         }
 
