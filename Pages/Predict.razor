@@ -3,8 +3,12 @@
 @inject IFileReaderService fileReaderService;
 @inject IJSRuntime CurrentJSRuntime;
 @using ImageClassification.ModelScorer;
+@using Microsoft.Extensions.Configuration
 @using Microsoft.Extensions.Logging;
+@using System.Drawing
+@using System.IO
 @inject ILogger<Predict> logger;
+@using BlazorAppML.Data;
 
 <h1>Inception model</h1>
 
@@ -13,11 +17,41 @@ There are multiple models which are pre-trained for classifying images.
 In this case, we use a model based on an Inception topology, and trained with images from Image.Net
 <br />
 <br />
-
-<input type="file" @ref=inputElement />
-<button @onclick=ReadFile class="btn btn-primary">Read file</button>
-<button @onclick=ClearFile class="btn btn-primary">Clear</button>
-<button @onclick=CancelFile disabled=@IsCancelDisabled class="btn btn-primary">Cancel</button>
+<div class="container">
+    <div class="row align-self-start">
+        <div class="col-2">
+            <input type="file" @ref=inputElement />
+        </div>
+    </div>
+    <div class="row align-self-start">
+        <br />
+    </div>
+    @{
+        authorized = false;
+    }
+    <div class="row align-self-start">
+        <div class="col-5">
+            <button @onclick=ReadFile class="btn btn-primary">Read file</button>
+            <button @onclick=ClearFile class="btn btn-primary">Clear</button>
+            <AuthorizeView>
+                <Authorized>
+                    @{
+                        var tags =  readCsv("./Model/assets/inputs/inception/imagenet.csv");
+                        tags.Sort();
+                        authorized = true;
+                        userEmail = context.User.Identity.Name;
+                    }
+                    <select @bind="userPrediction">
+                        @foreach (var tag in tags)
+                        {
+                            <option value=@tag>@tag</option>
+                        }
+                    </select>
+                </Authorized>
+            </AuthorizeView>
+        </div>
+    </div>
+</div>
 @{
     if (fileUploading)
     {
@@ -35,7 +69,7 @@ In this case, we use a model based on an Inception topology, and trained with im
     if (fileUploaded)
     {
         logger.LogWarning("input single file");
-        <img src="@(imgPath + fileName)" width="300px" alt="@fileName" />
+        <img src="@(imgPath + fileName)" width="300px" height="300px" alt="@fileName" />
         fileUploading = false;
 
         string assetsRelativePath = @"..\..\..\Model\assets";
@@ -84,6 +118,9 @@ In this case, we use a model based on an Inception topology, and trained with im
     private bool fileUploaded = false;
     public string fileName;
     public bool fileUploading = false;
+    public string userPrediction;
+    public bool authorized = false;
+    public string userEmail;
 
     public async Task ClearFile()
     {
@@ -171,6 +208,12 @@ In this case, we use a model based on an Inception topology, and trained with im
                 value = max;
                 Output += $"Done reading file {fileInfo.Name} - {fileInfo.Size} bytes in {stopwatch.ElapsedMilliseconds}ms.{nl}.";
                 this.StateHasChanged();
+
+                if (authorized)
+                {
+                    var query = new Query();
+                    Console.WriteLine(GetUserId(userEmail));
+                }
             }
             catch (OperationCanceledException)
             {
@@ -199,5 +242,32 @@ In this case, we use a model based on an Inception topology, and trained with im
         string assemblyFolderPath = _dataRoot.Directory.FullName;
         string fullPath = Path.Combine(assemblyFolderPath, relativePath);
         return fullPath;
+    }
+
+    public List<string> readCsv(string filename)
+    {
+        using(var reader = new StreamReader(filename))
+             {
+                List<string> tags = new List<string>();
+                while(!reader.EndOfStream)
+                {
+                    var line = reader.ReadLine();
+                    var values = line.Split(',');
+
+                    tags.Add(values[1]);
+                }
+
+                return tags;
+             }
+    }
+
+    public string GetUserId(string UserEmail)
+    {
+        var query = new Query();
+        using(ApplicationDbContext db = new ApplicationDbContext(query.options))
+        {
+            var user = (from u in db.Users where u.UserName == UserEmail select u.Id).ToString();
+            return user;
+        }
     }
 }
