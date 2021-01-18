@@ -13,7 +13,9 @@
 <h1>Inception model</h1>
 
 <p>
-    
+    Цель данного проекта - помощь сбора данных для обучения на них нейронной сети. Ниже представлена неронная сеть, способная 
+    различить до 1001 класса разных объектов, будь то брокколи, плюшевый медведь или каноэ.
+    Загрузите изображение на сайт и получите результат.
 </p>
 <br />
 <div class="container">
@@ -28,12 +30,13 @@
     @{
         authorized = false;
     }
-    <div class="row align-self-start">
-        <div class="col-5">
-            <button @onclick=ReadFile class="btn btn-primary">Read file</button>
-            <button @onclick=ClearFile class="btn btn-primary">Clear</button>
-            <AuthorizeView>
-                <Authorized>
+    <AuthorizeView>
+        <Authorized>
+            <div class="row">
+                <div class="col-5">
+                    <p>Выберите объект на вашем изображении: </p>
+                </div>
+                <div class="col-5">
                     @{
                         var tags =  readCsv("./Model/assets/inputs/inception/imagenet.csv");
                         tags.Sort();
@@ -46,8 +49,17 @@
                             <option value=@tag>@tag</option>
                         }
                     </select>
-                </Authorized>
-            </AuthorizeView>
+                </div>
+            </div>
+        </Authorized>
+        <NotAuthorized>
+            <p>Если хотите помочь нам в сборе данных, <a href="Identity/Account/Login">авторизуйтесь</a> или <a href="Identity/Account/Register">зарегестрируйтесь</a></p>
+        </NotAuthorized>
+    </AuthorizeView>
+    
+    <div class="row align-self-start">
+        <div class="col-5">
+            <button @onclick=ReadFile class="btn btn-primary">Загрузить файл</button>
         </div>
     </div>
 </div>
@@ -87,9 +99,17 @@
         probability = res.Probability;
 
         logger.LogWarning($"name = {@img_name}, label = {@label}, probability = {@probability}");
+        <br />
+        <br />
         <p>
-            Изображение @fileName совпадает с классом @label c вероятностью @probability
+            Изображение совпадает с классом <strong>@label</strong> c вероятностью <strong>@probability</strong>
         </p>
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
     }
 
 }
