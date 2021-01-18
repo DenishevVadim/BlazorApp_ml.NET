@@ -38,7 +38,6 @@ In this case, we use a model based on an Inception topology, and trained with im
                     @{
                         var tags =  readCsv("./Model/assets/inputs/inception/imagenet.csv");
                         tags.Sort();
-                        authorized = true;
                         userEmail = context.User.Identity.Name;
                     }
                     <select @bind="userPrediction">
@@ -47,6 +46,9 @@ In this case, we use a model based on an Inception topology, and trained with im
                             <option value=@tag>@tag</option>
                         }
                     </select>
+                    @{
+                        authorized = true;
+                    }
                 </Authorized>
             </AuthorizeView>
         </div>
@@ -84,8 +86,8 @@ In this case, we use a model based on an Inception topology, and trained with im
         var pred = new pred_model(tagsTsv, imagesFolder, inceptionPb, labelsTxt,img_name); // create model
         var res = pred.Predict(); // pred
 
-        var label = res.PredictedLabel;
-        var probability = res.Probability;
+        label = res.PredictedLabel;
+        probability = res.Probability;
 
         logger.LogWarning($"name = {@img_name}, label = {@label}, probability = {@probability}");
         <p>
@@ -121,7 +123,9 @@ In this case, we use a model based on an Inception topology, and trained with im
     public string userPrediction;
     public bool authorized = false;
     public string userEmail;
-
+    public string userId;
+    public string label;
+    public float probability;
     public async Task ClearFile()
     {
         await fileReaderService.CreateReference(inputElement).ClearValue();
@@ -211,8 +215,9 @@ In this case, we use a model based on an Inception topology, and trained with im
 
                 if (authorized)
                 {
-                    var query = new Query();
-                    Console.WriteLine(GetUserId(userEmail));
+                    var userId = GetUserId(userEmail);
+                    Console.WriteLine(userPrediction);
+                    CreatePrediciton(userId, label, "1234", probability, userPrediction);
                 }
             }
             catch (OperationCanceledException)
@@ -261,13 +266,24 @@ In this case, we use a model based on an Inception topology, and trained with im
              }
     }
 
-    public string GetUserId(string UserEmail)
+    public string  GetUserId(string UserEmail)
     {
         var query = new Query();
         using(ApplicationDbContext db = new ApplicationDbContext(query.options))
         {
-            var user = (from u in db.Users where u.UserName == UserEmail select u.Id).ToString();
-            return user;
+            var user = (from u in db.Users where u.UserName == userEmail select u.Id).ToList();
+            return user[0];
+        }
+    }
+
+    public void CreatePrediciton(string userId, string result, string filePath, float probability, string userPrediction)
+    {
+        Query query = new Query();
+        using(ApplicationDbContext db = new ApplicationDbContext(query.options))
+        {
+            Prediction pred = new Prediction { UserId=userId, Class=result, FilePath=filePath, Probability=probability, UserPrediction=userPrediction };
+            db.Predictions.AddRange(pred);
+            db.SaveChanges();
         }
     }
 }
