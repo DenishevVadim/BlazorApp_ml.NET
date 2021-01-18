@@ -12,10 +12,9 @@
 
 <h1>Inception model</h1>
 
-There are multiple models which are pre-trained for classifying images. 
-<br />
-In this case, we use a model based on an Inception topology, and trained with images from Image.Net
-<br />
+<p>
+    
+</p>
 <br />
 <div class="container">
     <div class="row align-self-start">
@@ -39,16 +38,14 @@ In this case, we use a model based on an Inception topology, and trained with im
                         var tags =  readCsv("./Model/assets/inputs/inception/imagenet.csv");
                         tags.Sort();
                         userEmail = context.User.Identity.Name;
+                        authorized = true;
                     }
-                    <select @bind="userPrediction">
+                    <select @bind="value">
                         @foreach (var tag in tags)
                         {
                             <option value=@tag>@tag</option>
                         }
                     </select>
-                    @{
-                        authorized = true;
-                    }
                 </Authorized>
             </AuthorizeView>
         </div>
@@ -59,7 +56,7 @@ In this case, we use a model based on an Inception topology, and trained with im
     {
         <br />
         <br />
-        <progress max="@max" value="@value" />
+        <progress max="@max" value="@progress" />
         <br />
     }
     else
@@ -105,7 +102,7 @@ In this case, we use a model based on an Inception topology, and trained with im
     [Parameter]
     public int BufferSize { get; set; } = 20480;
     public long max;
-    public long value;
+    public long progress;
     ElementReference inputElement;
     public System.Threading.CancellationTokenSource cancellationTokenSource;
     string Output { get; set; }
@@ -120,7 +117,7 @@ In this case, we use a model based on an Inception topology, and trained with im
     private bool fileUploaded = false;
     public string fileName;
     public bool fileUploading = false;
-    public string userPrediction;
+    public string value;
     public bool authorized = false;
     public string userEmail;
     public string userId;
@@ -134,7 +131,7 @@ In this case, we use a model based on an Inception topology, and trained with im
     public async Task ReadFile()
     {
         max = 0;
-        value = 0;
+        progress = 0;
         Output = string.Empty;
         this.StateHasChanged();
         var files = await fileReaderService.CreateReference(inputElement).EnumerateFilesAsync();
@@ -152,8 +149,6 @@ In this case, we use a model based on an Inception topology, and trained with im
             }
 
             max = fileInfo.Size;
-
-            fileName = fileInfo.Name;
 
             var stopwatch = new Stopwatch();
             stopwatch.Start();
@@ -185,7 +180,7 @@ In this case, we use a model based on an Inception topology, and trained with im
                     Output += $"Read {(e.PositionDeltaSinceAcknowledge)} bytes ({e.Percentage:00}%). {e.Position} / {fileInfo.Size}{nl}";
                     this.InvokeAsync(this.StateHasChanged);
                     e.Acknowledge();
-                    value = e.Position;
+                    progress = e.Position;
                     stopwatch.Start();
                 }
             };
@@ -203,21 +198,23 @@ In this case, we use a model based on an Inception topology, and trained with im
                 }
 
                 img = ms.ToArray();
+                fileName = DateTime.Now.ToString("yyyy_MM_dd__hh_mm_ss") + ".jpg";
+                Console.WriteLine(fileName);
                 Bitmap bmp = new Bitmap(ms);
                 bmp.Save(src1, System.Drawing.Imaging.ImageFormat.Jpeg);
                 bmp.Save((src2 + fileName), System.Drawing.Imaging.ImageFormat.Jpeg);
 
                 fileUploaded = true;
 
-                value = max;
+                progress = max;
                 Output += $"Done reading file {fileInfo.Name} - {fileInfo.Size} bytes in {stopwatch.ElapsedMilliseconds}ms.{nl}.";
                 this.StateHasChanged();
 
                 if (authorized)
                 {
                     var userId = GetUserId(userEmail);
-                    Console.WriteLine(userPrediction);
-                    CreatePrediciton(userId, label, "1234", probability, userPrediction);
+                    Console.WriteLine(value);
+                    CreatePrediciton(userId, label, (src2 + fileName), probability, value);
                 }
             }
             catch (OperationCanceledException)
