@@ -12,10 +12,11 @@
 
 <h1>Inception model</h1>
 
-There are multiple models which are pre-trained for classifying images. 
-<br />
-In this case, we use a model based on an Inception topology, and trained with images from Image.Net
-<br />
+<p>
+    Цель данного проекта - помощь сбора данных для обучения на них нейронной сети. Ниже представлена неронная сеть, способная 
+    различить до 1001 класса разных объектов, будь то брокколи, плюшевый медведь или каноэ.
+    Загрузите изображение на сайт и получите результат.
+</p>
 <br />
 <div class="container">
     <div class="row align-self-start">
@@ -29,26 +30,36 @@ In this case, we use a model based on an Inception topology, and trained with im
     @{
         authorized = false;
     }
-    <div class="row align-self-start">
-        <div class="col-5">
-            <button @onclick=ReadFile class="btn btn-primary">Read file</button>
-            <button @onclick=ClearFile class="btn btn-primary">Clear</button>
-            <AuthorizeView>
-                <Authorized>
+    <AuthorizeView>
+        <Authorized>
+            <div class="row">
+                <div class="col-5">
+                    <p>Выберите объект на вашем изображении: </p>
+                </div>
+                <div class="col-5">
                     @{
                         var tags =  readCsv("./Model/assets/inputs/inception/imagenet.csv");
                         tags.Sort();
-                        authorized = true;
                         userEmail = context.User.Identity.Name;
+                        authorized = true;
                     }
-                    <select @bind="userPrediction">
+                    <select @bind="value">
                         @foreach (var tag in tags)
                         {
                             <option value=@tag>@tag</option>
                         }
                     </select>
-                </Authorized>
-            </AuthorizeView>
+                </div>
+            </div>
+        </Authorized>
+        <NotAuthorized>
+            <p>Если хотите помочь нам в сборе данных, <a href="Identity/Account/Login">авторизуйтесь</a> или <a href="Identity/Account/Register">зарегестрируйтесь</a></p>
+        </NotAuthorized>
+    </AuthorizeView>
+    
+    <div class="row align-self-start">
+        <div class="col-5">
+            <button @onclick=ReadFile class="btn btn-primary">Загрузить файл</button>
         </div>
     </div>
 </div>
@@ -57,7 +68,7 @@ In this case, we use a model based on an Inception topology, and trained with im
     {
         <br />
         <br />
-        <progress max="@max" value="@value" />
+        <progress max="@max" value="@progress" />
         <br />
     }
     else
@@ -84,13 +95,21 @@ In this case, we use a model based on an Inception topology, and trained with im
         var pred = new pred_model(tagsTsv, imagesFolder, inceptionPb, labelsTxt,img_name); // create model
         var res = pred.Predict(); // pred
 
-        var label = res.PredictedLabel;
-        var probability = res.Probability;
+        label = res.PredictedLabel;
+        probability = res.Probability;
 
         logger.LogWarning($"name = {@img_name}, label = {@label}, probability = {@probability}");
+        <br />
+        <br />
         <p>
-            Изображение @fileName совпадает с классом @label c вероятностью @probability
+            Изображение совпадает с классом <strong>@label</strong> c вероятностью <strong>@probability</strong>
         </p>
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
     }
 
 }
@@ -103,7 +122,7 @@ In this case, we use a model based on an Inception topology, and trained with im
     [Parameter]
     public int BufferSize { get; set; } = 20480;
     public long max;
-    public long value;
+    public long progress;
     ElementReference inputElement;
     public System.Threading.CancellationTokenSource cancellationTokenSource;
     string Output { get; set; }
@@ -118,10 +137,12 @@ In this case, we use a model based on an Inception topology, and trained with im
     private bool fileUploaded = false;
     public string fileName;
     public bool fileUploading = false;
-    public string userPrediction;
+    public string value;
     public bool authorized = false;
     public string userEmail;
-
+    public string userId;
+    public string label;
+    public float probability;
     public async Task ClearFile()
     {
         await fileReaderService.CreateReference(inputElement).ClearValue();
@@ -130,7 +151,7 @@ In this case, we use a model based on an Inception topology, and trained with im
     public async Task ReadFile()
     {
         max = 0;
-        value = 0;
+        progress = 0;
         Output = string.Empty;
         this.StateHasChanged();
         var files = await fileReaderService.CreateReference(inputElement).EnumerateFilesAsync();
@@ -148,8 +169,6 @@ In this case, we use a model based on an Inception topology, and trained with im
             }
 
             max = fileInfo.Size;
-
-            fileName = fileInfo.Name;
 
             var stopwatch = new Stopwatch();
             stopwatch.Start();
@@ -181,7 +200,7 @@ In this case, we use a model based on an Inception topology, and trained with im
                     Output += $"Read {(e.PositionDeltaSinceAcknowledge)} bytes ({e.Percentage:00}%). {e.Position} / {fileInfo.Size}{nl}";
                     this.InvokeAsync(this.StateHasChanged);
                     e.Acknowledge();
-                    value = e.Position;
+                    progress = e.Position;
                     stopwatch.Start();
                 }
             };
@@ -199,20 +218,23 @@ In this case, we use a model based on an Inception topology, and trained with im
                 }
 
                 img = ms.ToArray();
+                fileName = DateTime.Now.ToString("yyyy_MM_dd__hh_mm_ss") + ".jpg";
+                Console.WriteLine(fileName);
                 Bitmap bmp = new Bitmap(ms);
                 bmp.Save(src1, System.Drawing.Imaging.ImageFormat.Jpeg);
                 bmp.Save((src2 + fileName), System.Drawing.Imaging.ImageFormat.Jpeg);
 
                 fileUploaded = true;
 
-                value = max;
+                progress = max;
                 Output += $"Done reading file {fileInfo.Name} - {fileInfo.Size} bytes in {stopwatch.ElapsedMilliseconds}ms.{nl}.";
                 this.StateHasChanged();
 
                 if (authorized)
                 {
-                    var query = new Query();
-                    Console.WriteLine(GetUserId(userEmail));
+                    var userId = GetUserId(userEmail);
+                    Console.WriteLine(value);
+                    CreatePrediciton(userId, label, (src2 + fileName), probability, value);
                 }
             }
             catch (OperationCanceledException)
@@ -261,13 +283,24 @@ In this case, we use a model based on an Inception topology, and trained with im
              }
     }
 
-    public string GetUserId(string UserEmail)
+    public string  GetUserId(string UserEmail)
     {
         var query = new Query();
         using(ApplicationDbContext db = new ApplicationDbContext(query.options))
         {
-            var user = (from u in db.Users where u.UserName == UserEmail select u.Id).ToString();
-            return user;
+            var user = (from u in db.Users where u.UserName == userEmail select u.Id).ToList();
+            return user[0];
+        }
+    }
+
+    public void CreatePrediciton(string userId, string result, string filePath, float probability, string userPrediction)
+    {
+        Query query = new Query();
+        using(ApplicationDbContext db = new ApplicationDbContext(query.options))
+        {
+            Prediction pred = new Prediction { UserId=userId, Class=result, FilePath=filePath, Probability=probability, UserPrediction=userPrediction };
+            db.Predictions.AddRange(pred);
+            db.SaveChanges();
         }
     }
 }
